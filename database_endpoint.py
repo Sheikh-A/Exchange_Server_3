@@ -38,17 +38,17 @@ def log_message(content):
     #pass
     print('Log_message Function')
     
-    #Create a trading Dictionary
-    trading = {}
-    trading['sender_pk'] = content["payload"]["sender_pk"]
-    trading['receiver_pk'] = content["payload"]["receiver_pk"]
-    trading['buy_currency'] = content["payload"]["buy_currency"]
-    trading['sell_currency'] = content["payload"]["sell_currency"]
-    trading['buy_amount'] = content["payload"]["buy_amount"]
-    trading['sell_amount'] = content["payload"]["sell_amount"]
-    trading['platform'] = content["payload"]["platform"]
+    #Create a trade Dictionary
+    trade = {}
+    trade['sender_pk'] = content["payload"]["sender_pk"]
+    trade['receiver_pk'] = content["payload"]["receiver_pk"]
+    trade['buy_currency'] = content["payload"]["buy_currency"]
+    trade['sell_currency'] = content["payload"]["sell_currency"]
+    trade['buy_amount'] = content["payload"]["buy_amount"]
+    trade['sell_amount'] = content["payload"]["sell_amount"]
+    trade['platform'] = content["payload"]["platform"]
 
-    log_obj = Log( message = json.dumps(trading) )
+    log_obj = Log( message = json.dumps(trade) )
     g.session.add(log_obj)
     g.session.commit()
 
@@ -58,8 +58,8 @@ def log_message(content):
 ---------------- Endpoints ----------------
 """
     
-@app.route('/trading', methods=['POST'])
-def trading():
+@app.route('/trade', methods=['POST'])
+def trade():
     if request.method == "POST":
         content = request.get_json(silent=True)
         print( f"content = {json.dumps(content)}" )
@@ -68,7 +68,7 @@ def trading():
         error = False
         for field in fields:
             if not field in content.keys():
-                print( f"{field} not received by Trading" )
+                print( f"{field} not received by Trade" )
                 print( json.dumps(content) )
                 log_message(content)
                 return jsonify( False )
@@ -76,7 +76,7 @@ def trading():
         error = False
         for column in columns:
             if not column in content['payload'].keys():
-                print( f"{column} not received by Trading" )
+                print( f"{column} not received by Trade" )
                 error = True
         if error:
             print( json.dumps(content) )
@@ -102,7 +102,7 @@ def trading():
             buy_amount = content["payload"]["buy_amount"]
             sell_amount = content["payload"]["sell_amount"]
 
-            #Trading Dict
+            #Trade Dict
             msg_dict = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'sell_amount':sell_amount,'buy_amount':buy_amount}
             
             
@@ -140,16 +140,16 @@ def trading():
             sell_amount = content["payload"]["sell_amount"]
 
 
-            #Trading Dict
-            trading = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'buy_amount':buy_amount,'sell_amount':sell_amount }
+            #Trade Dict
+            trade = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'buy_amount':buy_amount,'sell_amount':sell_amount }
             
-            payload = json.dumps(trading)
+            payload = json.dumps(trade)
             
             
             if algosdk.util.verify_bytes(payload.encode('utf-8'),sig,pk):
                 print( "Algo sig verifies!" )
                 # Write to Order table, exclude platform
-                order_obj = Order( sender_pk=trading['sender_pk'],receiver_pk=trading['receiver_pk'], buy_currency=trading['buy_currency'], sell_currency=trading['sell_currency'], buy_amount=trading['buy_amount'], sell_amount=trading['sell_amount'],signature = content["sig"] )
+                order_obj = Order( sender_pk=trade['sender_pk'],receiver_pk=trade['receiver_pk'], buy_currency=trade['buy_currency'], sell_currency=trade['sell_currency'], buy_amount=trade['buy_amount'], sell_amount=trade['sell_amount'],signature = content["sig"] )
                 g.session.add(order_obj)
                 g.session.commit()
                 return jsonify(True)
