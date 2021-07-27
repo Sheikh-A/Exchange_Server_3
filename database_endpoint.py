@@ -102,7 +102,12 @@ def trade():
             sell_currency = content["payload"]["sell_currency"]
 
 
-            trade = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'buy_amount':buy_amount,'sell_amount':sell_amount }
+            trade = {'platform':platform,'sender_pk': pk,
+                     'receiver_pk': receiver_pk,
+                     'buy_currency':buy_currency,
+                     'sell_currency': sell_currency,
+                     'buy_amount':buy_amount,
+                     'sell_amount':sell_amount }
             #JSON DUMPS
             payload = json.dumps(trade)
 
