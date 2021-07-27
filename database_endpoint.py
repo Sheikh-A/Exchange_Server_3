@@ -18,7 +18,7 @@ DBSession = sessionmaker(bind=engine)
 app = Flask(__name__)
 
 #Debug logging
-logging.basicConfig(filename='debug.log', level=logging.DEBUG)
+#logging.basicConfig(filename='debug.log', level=logging.DEBUG)
 
 #These decorators allow you to use g.session to access the database inside the request code
 @app.before_request
