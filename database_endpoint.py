@@ -83,7 +83,7 @@ def fill_order(order,txes=[]):
             process_order(new_order)
 
 def log_message(d):
-    log_object = Log( message=d)
+    log_object = Log(json.dumps(d))
     g.session.add(log_object)
     g.session.commit()
 
