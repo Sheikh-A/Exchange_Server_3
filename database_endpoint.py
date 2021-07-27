@@ -117,9 +117,9 @@ def trade():
             if algosdk.util.verify_bytes(payload.encode('utf-8'),sig,pk):
                 print( "Checked" )
 
-                order_object = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
+                order_obj = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
                 #Add order
-                g.session.add(order_object)
+                g.session.add(order_obj)
                 #commit order
                 g.session.commit()
                 return jsonify(True)
@@ -149,8 +149,8 @@ def trade():
 
             if eth_account.Account.recover_message(eth_encoded_msg,signature=sig) == pk:
                 print( "Check completed!" )
-                order_object = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
-                g.session.add(order_object)
+                order_obj = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
+                g.session.add(order_obj)
                 g.session.commit()
                 return jsonify(True)
             else :
