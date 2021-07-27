@@ -103,14 +103,31 @@ def trade():
             sell_currency = content["payload"]["sell_currency"]
 
 
-            trade = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'buy_amount':buy_amount,'sell_amount':sell_amount }
+            trade = {'platform':platform,
+                     'sender_pk': pk,
+                     'receiver_pk': receiver_pk,
+                     'buy_amount':buy_amount,
+                     'sell_amount':sell_amount,
+                     'buy_currency':buy_currency,
+                     'sell_currency': sell_currency,
+                     }
             #JSON DUMPS
             payload = json.dumps(trade)
 
             if algosdk.util.verify_bytes(payload.encode('utf-8'),sig,pk):
                 print( "Checked" )
 
-                order_obj = Order( sender_pk=trade['sender_pk'],receiver_pk=trade['receiver_pk'], buy_currency=trade['buy_currency'], sell_currency=trade['sell_currency'], buy_amount=trade['buy_amount'], sell_amount=trade['sell_amount'],signature = content["sig"] )
+                order_obj = Order(
+                    sender_pk=trade['sender_pk'],
+                    receiver_pk=trade['receiver_pk'],
+                    #BUYAMT
+                    buy_amount=trade['buy_amount'],
+                    sell_amount=trade['sell_amount'],
+                    #BUYCURR
+                    buy_currency=trade['buy_currency'],
+                    sell_currency=trade['sell_currency'],
+                    #SIG
+                    signature = content["sig"] )
                 #Add order
                 g.session.add(order_obj)
                 #commit order
