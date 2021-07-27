@@ -36,22 +36,20 @@ def shutdown_session(response_or_exc):
 def log_message(content):
     # Takes input dictionary d and writes it to the Log table
     #pass
-
-    #Create a trade Dictionary
-    trade = {}
+    trade_order = {}
     #BUYSELL
-    trade["buy_currency"] = content["payload"]["buy_currency"]
-    trade["sell_currency"] = content["payload"]["sell_currency"]
+    trade_order["buy_currency"] = content["payload"]["buy_currency"]
+    trade_order["sell_currency"] = content["payload"]["sell_currency"]
     #BUYAMT
-    trade["buy_amount"] = content["payload"]["buy_amount"]
-    trade["sell_amount"] = content["payload"]["sell_amount"]
+    trade_order["buy_amount"] = content["payload"]["buy_amount"]
+    trade_order["sell_amount"] = content["payload"]["sell_amount"]
     #ADDRESS
-    trade["sender_pk"] = content["payload"]["sender_pk"]
-    trade["receiver_pk"] = content["payload"]["receiver_pk"]
+    trade_order["sender_pk"] = content["payload"]["sender_pk"]
+    trade_order["receiver_pk"] = content["payload"]["receiver_pk"]
     #PLATFORM
-    trade["platform"] = content["payload"]["platform"]
+    trade_order["platform"] = content["payload"]["platform"]
 
-    log_obj = Log( message = json.dumps(trade) )
+    log_obj = Log( message = json.dumps(trade_order) )
     g.session.add(log_obj)
     g.session.commit()
 
