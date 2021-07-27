@@ -36,7 +36,9 @@ def shutdown_session(response_or_exc):
 def log_message(content):
     # Takes input dictionary d and writes it to the Log table
     #pass
-    #Create a Dictionary
+    print('Log_message Function')
+
+    #Create a trade Dictionary
     trade = {}
     #BUYSELL
     trade["buy_currency"] = content["payload"]["buy_currency"]
@@ -103,21 +105,14 @@ def trade():
             sell_currency = content["payload"]["sell_currency"]
 
 
-            trade = {'platform':platform,
-                     'sender_pk': pk,
-                     'receiver_pk': receiver_pk,
-                     'buy_amount':buy_amount,
-                     'sell_amount':sell_amount,
-                     'buy_currency':buy_currency,
-                     'sell_currency': sell_currency,
-                     }
+            trade = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'buy_amount':buy_amount,'sell_amount':sell_amount }
             #JSON DUMPS
             payload = json.dumps(trade)
 
             if algosdk.util.verify_bytes(payload.encode('utf-8'),sig,pk):
                 print( "Checked" )
 
-                order_obj = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
+                order_obj = Order( sender_pk=trade['sender_pk'],receiver_pk=trade['receiver_pk'], buy_currency=trade['buy_currency'], sell_currency=trade['sell_currency'], buy_amount=trade['buy_amount'], sell_amount=trade['sell_amount'],signature = content["sig"] )
                 #Add order
                 g.session.add(order_obj)
                 #commit order
@@ -173,7 +168,9 @@ def order_book():
     }
 
     for item in result:
-        json_result['data'].append({'sender_pk': row.sender_pk,'receiver_pk': row.receiver_pk, 'buy_currency': row.buy_currency, 'sell_currency': row.sell_currency, 'buy_amount': row.buy_amount, 'sell_amount': row.sell_amount,'signature': row.signature})
+        # timestamp_str = str(row.timestamp)
+        json_result['data'].append({'sender_pk': item.sender_pk,'receiver_pk': item.receiver_pk, 'buy_currency': item.buy_currency,
+                    'sell_currency': item.sell_currency, 'buy_amount': item.buy_amount, 'sell_amount': item.sell_amount,'signature': item.signature})
 
     return jsonify(json_result)
 
