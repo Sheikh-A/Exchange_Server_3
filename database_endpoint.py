@@ -168,7 +168,6 @@ def order_book():
     }
 
     for item in result:
-        # timestamp_str = str(row.timestamp)
         json_result['data'].append({'sender_pk': item.sender_pk,'receiver_pk': item.receiver_pk, 'buy_currency': item.buy_currency,
                     'sell_currency': item.sell_currency, 'buy_amount': item.buy_amount, 'sell_amount': item.sell_amount,'signature': item.signature})
 
