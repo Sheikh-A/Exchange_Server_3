@@ -84,8 +84,8 @@ def fill_order(order,txes=[]):
 
 def log_message(d):
     log_object = Log(json.dumps(d))
-    g.session.add(log_object)
-    g.session.commit()
+    # g.session.add(log_object)
+    # g.session.commit()
 
 """ End of helper methods """
 
