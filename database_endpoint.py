@@ -145,7 +145,7 @@ def trade():
                 g.session.commit()
                 return jsonify(True)
             else :
-                print('Recovered ETH pk::'+eth_account.Account.recover_message(eth_encoded_msg,signature=sig))
+                print('Recovered ETH'+eth_account.Account.recover_message(eth_encoded_msg,signature=sig))
                 log_message(content)
                 return jsonify(False)
         else:
