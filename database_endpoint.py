@@ -61,7 +61,7 @@ def log_message(content):
 """
 ---------------- Endpoints ----------------
 """
-    
+
 @app.route('/trade', methods=['POST'])
 def trade():
     if request.method == "POST":
@@ -76,7 +76,7 @@ def trade():
                 print( json.dumps(content) )
                 log_message(content)
                 return jsonify( False )
-        
+
         error = False
         for column in columns:
             if not column in content['payload'].keys():
@@ -86,57 +86,14 @@ def trade():
             print( json.dumps(content) )
             log_message(content)
             return jsonify( False )
-            
-        #Your code here
-        #Note that you can access the database session using g.session
-        #JSON Decoder
+
         platform = content["payload"]["platform"]
 
-        #Check if signature is valid
-
         # Ethereum
-        if platform == "Ethereum":
-            
-            sig = content["sig"][2:]
-            pk = content["payload"]["sender_pk"]
-            
-            receiver_pk = content["payload"]["receiver_pk"]
-            buy_currency = content["payload"]["buy_currency"]
-            sell_currency = content["payload"]["sell_currency"]
-            buy_amount = content["payload"]["buy_amount"]
-            sell_amount = content["payload"]["sell_amount"]
-
-            #Trade Dict
-            msg_dict = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'sell_amount':sell_amount,'buy_amount':buy_amount}
-            
-            
-            message = json.dumps(msg_dict)
-            
-            eth_encoded_msg = eth_account.messages.encode_defunct(text=message)
-            # sk = b'o$\xa6\xe4\xa3\xdc\x91\xbf9\x04\xa0\xc8\x82\xd5\xecz\xa90\x9e]7\xce`no\x1b\x19,\x0b\xb1\x9b\x16'            
-            # eth_sig_obj = eth_account.Account.sign_message(eth_encoded_msg,sk)
-            # sig = eth_sig_obj.signature.hex()
-            # print('signed sig is: '+ sig)
-            print('ETH original pk is: '+ pk)
-
-            if eth_account.Account.recover_message(eth_encoded_msg,signature=sig) == pk:   
-                print( "Eth sig verifies!" )
-                # Write to Order table, exclude platform
-                order_obj = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
-                g.session.add(order_obj)
-                g.session.commit()
-                return jsonify(True)
-            else :
-                print('ETH recovered pk is: '+eth_account.Account.recover_message(eth_encoded_msg,signature=sig))
-                log_message(content)
-                return jsonify(False)
-            
-        elif platform == "Algorand":
-            
+        if platform == "Algorand":
             sig = content["sig"]
             pk = content["payload"]["sender_pk"]
-            
-            
+
             receiver_pk = content["payload"]["receiver_pk"]
             buy_currency = content["payload"]["buy_currency"]
             sell_currency = content["payload"]["sell_currency"]
@@ -146,10 +103,8 @@ def trade():
 
             #Trade Dict
             trade = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'buy_amount':buy_amount,'sell_amount':sell_amount }
-            
             payload = json.dumps(trade)
-            
-            
+
             if algosdk.util.verify_bytes(payload.encode('utf-8'),sig,pk):
                 print( "Algo sig verifies!" )
                 # Write to Order table, exclude platform
@@ -157,9 +112,40 @@ def trade():
                 g.session.add(order_obj)
                 g.session.commit()
                 return jsonify(True)
-            else :               
+            else :
                 log_message(content)
                 return jsonify(False)
+        elif platform == "Ethereum":
+            sig = content["sig"][2:]
+            pk = content["payload"]["sender_pk"]
+
+            receiver_pk = content["payload"]["receiver_pk"]
+            buy_currency = content["payload"]["buy_currency"]
+            sell_currency = content["payload"]["sell_currency"]
+            buy_amount = content["payload"]["buy_amount"]
+            sell_amount = content["payload"]["sell_amount"]
+
+            #Trade Dict
+            msg_dict = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'sell_amount':sell_amount,'buy_amount':buy_amount}
+
+            message = json.dumps(msg_dict)
+
+            eth_encoded_msg = eth_account.messages.encode_defunct(text=message)
+            print('ETH original pk is: '+ pk)
+
+            if eth_account.Account.recover_message(eth_encoded_msg,signature=sig) == pk:
+                print( "Etherum check!" )
+                order_obj = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
+                g.session.add(order_obj)
+                g.session.commit()
+                return jsonify(True)
+            else :
+                print('ETH recovered pk is: '+eth_account.Account.recover_message(eth_encoded_msg,signature=sig))
+                log_message(content)
+                return jsonify(False)
+        else:
+            print("Error check code")
+
 
 @app.route('/order_book')
 def order_book():
