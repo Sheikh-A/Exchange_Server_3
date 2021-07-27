@@ -1,15 +1,14 @@
 from flask import Flask, request, g
 from flask_restful import Resource, Api
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select, MetaData, Table
 from flask import jsonify
 import json
 import eth_account
 import algosdk
+import logging
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import load_only
-from datetime import datetime
-import sys
 
 from models import Base, Order, Log
 engine = create_engine('sqlite:///orders.db')
@@ -18,159 +17,159 @@ DBSession = sessionmaker(bind=engine)
 
 app = Flask(__name__)
 
+#Debug logging
+logging.basicConfig(filename='debug.log', level=logging.DEBUG)
+
+#These decorators allow you to use g.session to access the database inside the request code
 @app.before_request
 def create_session():
-    g.session = scoped_session(DBSession)
+    g.session = scoped_session(DBSession) #g is an "application global" https://flask.palletsprojects.com/en/1.1.x/api/#application-globals
 
 @app.teardown_appcontext
 def shutdown_session(response_or_exc):
-    sys.stdout.flush()
     g.session.commit()
     g.session.remove()
 
+"""
+-------- Helper methods (feel free to add your own!) -------
+"""
 
-""" Suggested helper methods """
+def log_message(content):
+    # Takes input dictionary d and writes it to the Log table
+    print('Logging trade to Log table')
+    #Trade Dict
+    trade = {}
+    trade['sender_pk'] = content["payload"]["sender_pk"]
+    trade['receiver_pk'] = content["payload"]["receiver_pk"]
+    trade['buy_currency'] = content["payload"]["buy_currency"]
+    trade['sell_currency'] = content["payload"]["sell_currency"]
+    trade['buy_amount'] = content["payload"]["buy_amount"]
+    trade['sell_amount'] = content["payload"]["sell_amount"]
+    trade['platform'] = content["payload"]["platform"]
 
-def check_sig(payload,sig):
-    pass
+    log_obj = Log( message = json.dumps(trade) )
+    g.session.add(log_obj)
+    g.session.commit()
 
-def fill_order(order,txes=[]):
-    order_obj = Order( sender_pk=order['sender_pk'],receiver_pk=order['receiver_pk'], buy_currency=order['buy_currency'], sell_currency=order['sell_currency'], buy_amount=order['buy_amount'], sell_amount=order['sell_amount'] )
-    if 'creator_id' in order.keys():
-        order_obj.creator_id = order['creator_id']
-    order = order_obj
-    session.add(order)
-    session.commit()
+    
 
-    orders = session.query(Order).filter(Order.filled == None).filter(Order.buy_currency == order.sell_currency).filter(Order.sell_currency == order.buy_currency).all()
-    id = -1
-    rate = 0
-
-    for candidate in orders:
-        new_rate = candidate.sell_amount / candidate.buy_amount
-        if new_rate > rate:
-            rate = new_rate
-            id = candidate.id
-
-    if id != -1 and rate >= order.buy_amount / order.sell_amount:
-        other = session.query(Order).get(id)
-        order = session.query(Order).get(order.id)
-        filled = datetime.now()
-        order.filled = filled
-        other.filled = filled
-        order.counterparty_id = id
-        other.counterparty_id = order.id
-        session.commit()
-        new_order = {}
-        new_Order = None
-        if order.buy_amount > other.sell_amount:
-            new_order['sender_pk'] = order.sender_pk
-            new_order['receiver_pk'] = order.receiver_pk
-            new_order['buy_currency'] = order.buy_currency
-            new_order['sell_currency'] = order.sell_currency
-            new_order['buy_amount'] = order.buy_amount - other.sell_amount
-            new_order['sell_amount'] = order.sell_amount - other.buy_amount
-            new_order['creator_id'] = order.id
-            process_order(new_order)
-        elif other.buy_amount > order.sell_amount:
-            new_order['sender_pk'] = other.sender_pk
-            new_order['receiver_pk'] = other.receiver_pk
-            new_order['buy_currency'] = other.buy_currency
-            new_order['sell_currency'] = other.sell_currency
-            new_order['buy_amount'] = other.buy_amount - order.sell_amount
-            new_order['sell_amount'] = other.sell_amount - order.buy_amount
-            new_order['creator_id'] = other.id
-            process_order(new_order)
-
-def log_message(d):
-    log_object = Log(json.dumps(d))
-    # g.session.add(log_object)
-    # g.session.commit()
-
-""" End of helper methods """
-
-
-
+"""
+---------------- Endpoints ----------------
+"""
+    
 @app.route('/trade', methods=['POST'])
 def trade():
-    print("In trade endpoint")
     if request.method == "POST":
         content = request.get_json(silent=True)
         print( f"content = {json.dumps(content)}" )
         columns = [ "sender_pk", "receiver_pk", "buy_currency", "sell_currency", "buy_amount", "sell_amount", "platform" ]
         fields = [ "sig", "payload" ]
-
+        error = False
         for field in fields:
             if not field in content.keys():
                 print( f"{field} not received by Trade" )
                 print( json.dumps(content) )
                 log_message(content)
                 return jsonify( False )
-
+        
+        error = False
         for column in columns:
             if not column in content['payload'].keys():
                 print( f"{column} not received by Trade" )
-                print( json.dumps(content) )
-                log_message(content)
-                return jsonify( False )
-
+                error = True
+        if error:
+            print( json.dumps(content) )
+            log_message(content)
+            return jsonify( False )
+            
         #Your code here
         #Note that you can access the database session using g.session
-        sig = content["sig"]
-        pk = content["payload"]["sender_pk"]
-        msg = json.dumps(content["payload"])
+        #JSON Decoder
         platform = content["payload"]["platform"]
-        result = True
-        if platform == 'Ethereum':
-            eth_encoded_msg = eth_account.messages.encode_defunct(text=msg)
-            if eth_account.Account.recover_message(eth_encoded_msg,signature=sig) == pk:
-                result = True
-            else:
-                result = False
-        else:
-            if algosdk.util.verify_bytes(msg.encode('utf-8'),sig,pk):
-                result = True
-            else:
-                result = False
-        if result == True:
-            order = {}
-            order['sender_pk'] = content["payload"]["sender_pk"]
-            order['receiver_pk'] = content["payload"]["receiver_pk"]
-            order['buy_currency'] = content["payload"]["buy_currency"]
-            order['sell_currency'] = content["payload"]["sell_currency"]
-            order['buy_amount'] = content["payload"]["buy_amount"]
-            order['sell_amount'] = content["payload"]["sell_amount"]
-            order_obj = Order( sender_pk=order['sender_pk'],receiver_pk=order['receiver_pk'], buy_currency=order['buy_currency'], sell_currency=order['sell_currency'], buy_amount=order['buy_amount'], sell_amount=order['sell_amount'] )
-            g.session.add(order_obj)
-            g.session.commit()
-        else:
-            log_message(msg)
 
-        # TODO: Fill the order
-        fill_order(content["payload"])
-        # TODO: Be sure to return jsonify(True) or jsonify(False) depending on if the method was successful
-        return jsonify(result)
+        #Check if signature is valid
 
+        # Ethereum
+        if platform == "Ethereum":
+            
+            sig = content["sig"][2:]
+            pk = content["payload"]["sender_pk"]
+            
+            receiver_pk = content["payload"]["receiver_pk"]
+            buy_currency = content["payload"]["buy_currency"]
+            sell_currency = content["payload"]["sell_currency"]
+            buy_amount = content["payload"]["buy_amount"]
+            sell_amount = content["payload"]["sell_amount"]
+
+            #Trade Dict
+            msg_dict = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'sell_amount':sell_amount,'buy_amount':buy_amount}
+            
+            
+            message = json.dumps(msg_dict)
+            
+            eth_encoded_msg = eth_account.messages.encode_defunct(text=message)
+            # sk = b'o$\xa6\xe4\xa3\xdc\x91\xbf9\x04\xa0\xc8\x82\xd5\xecz\xa90\x9e]7\xce`no\x1b\x19,\x0b\xb1\x9b\x16'            
+            # eth_sig_obj = eth_account.Account.sign_message(eth_encoded_msg,sk)
+            # sig = eth_sig_obj.signature.hex()
+            # print('signed sig is: '+ sig)
+            print('ETH original pk is: '+ pk)
+
+            if eth_account.Account.recover_message(eth_encoded_msg,signature=sig) == pk:   
+                print( "Eth sig verifies!" )
+                # Write to Order table, exclude platform
+                order_obj = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
+                g.session.add(order_obj)
+                g.session.commit()
+                return jsonify(True)
+            else :
+                print('ETH recovered pk is: '+eth_account.Account.recover_message(eth_encoded_msg,signature=sig))
+                log_message(content)
+                return jsonify(False)
+            
+        elif platform == "Algorand":
+            
+            sig = content["sig"]
+            pk = content["payload"]["sender_pk"]
+            
+            
+            receiver_pk = content["payload"]["receiver_pk"]
+            buy_currency = content["payload"]["buy_currency"]
+            sell_currency = content["payload"]["sell_currency"]
+            buy_amount = content["payload"]["buy_amount"]
+            sell_amount = content["payload"]["sell_amount"]
+
+
+            #Trade Dict
+            trade = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'buy_amount':buy_amount,'sell_amount':sell_amount }
+            
+            payload = json.dumps(trade)
+            
+            
+            if algosdk.util.verify_bytes(payload.encode('utf-8'),sig,pk):
+                print( "Algo sig verifies!" )
+                # Write to Order table, exclude platform
+                order_obj = Order( sender_pk=trade['sender_pk'],receiver_pk=trade['receiver_pk'], buy_currency=trade['buy_currency'], sell_currency=trade['sell_currency'], buy_amount=trade['buy_amount'], sell_amount=trade['sell_amount'],signature = content["sig"] )
+                g.session.add(order_obj)
+                g.session.commit()
+                return jsonify(True)
+            else :               
+                log_message(content)
+                return jsonify(False)
 
 @app.route('/order_book')
 def order_book():
     #Your code here
-    orders = g.session.query(Order)
-    result = {}
-    list = []
-    for order in orders:
-        cur = {}
-        cur['sender_pk'] = order.sender_pk
-        cur['receiver_pk'] = order.receiver_pk
-        cur['buy_currency'] = order.buy_currency
-        cur['sell_currency'] = order.sell_currency
-        cur['buy_amount'] = order.buy_amount
-        cur['sell_amount'] = order.sell_amount
-        cur['signature'] = order.signature
-        list.append(cur)
-    result['data'] = list
     #Note that you can access the database session using g.session
-    return jsonify(result)
+    result = g.session.query(Order).all()
+    json_obj_result = {
+    "data": []
+    }
+
+    for row in result:
+        # timestamp_str = str(row.timestamp)
+        json_obj_result['data'].append({'sender_pk': row.sender_pk,'receiver_pk': row.receiver_pk, 'buy_currency': row.buy_currency, 'sell_currency': row.sell_currency, 'buy_amount': row.buy_amount, 'sell_amount': row.sell_amount,'signature': row.signature})
+
+    return jsonify(json_obj_result)
 
 if __name__ == '__main__':
     app.run(port='5002')
