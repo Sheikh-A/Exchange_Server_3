@@ -117,19 +117,9 @@ def trade():
             if algosdk.util.verify_bytes(payload.encode('utf-8'),sig,pk):
                 print( "Checked" )
 
-                order_obj = Order(
-                    sender_pk=trade['sender_pk'],
-                    receiver_pk=trade['receiver_pk'],
-                    #BUYAMT
-                    buy_amount=trade['buy_amount'],
-                    sell_amount=trade['sell_amount'],
-                    #BUYCURR
-                    buy_currency=trade['buy_currency'],
-                    sell_currency=trade['sell_currency'],
-                    #SIG
-                    signature = content["sig"] )
+                order_object = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
                 #Add order
-                g.session.add(order_obj)
+                g.session.add(order_object)
                 #commit order
                 g.session.commit()
                 return jsonify(True)
@@ -159,8 +149,8 @@ def trade():
 
             if eth_account.Account.recover_message(eth_encoded_msg,signature=sig) == pk:
                 print( "Check completed!" )
-                order_obj = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
-                g.session.add(order_obj)
+                order_object = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
+                g.session.add(order_object)
                 g.session.commit()
                 return jsonify(True)
             else :
