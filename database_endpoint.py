@@ -17,10 +17,9 @@ DBSession = sessionmaker(bind=engine)
 
 app = Flask(__name__)
 
-#Debug logging
-#logging.basicConfig(filename='debug.log', level=logging.DEBUG)
 
 #These decorators allow you to use g.session to access the database inside the request code
+#BEFORE REQUEST
 @app.before_request
 def create_session():
     g.session = scoped_session(DBSession) #g is an "application global" https://flask.palletsprojects.com/en/1.1.x/api/#application-globals
@@ -36,18 +35,20 @@ def shutdown_session(response_or_exc):
 
 def log_message(content):
     # Takes input dictionary d and writes it to the Log table
-    print('Logging trade to Log table')
-    #Trade Dict
-    trade = {}
-    trade['sender_pk'] = content["payload"]["sender_pk"]
-    trade['receiver_pk'] = content["payload"]["receiver_pk"]
-    trade['buy_currency'] = content["payload"]["buy_currency"]
-    trade['sell_currency'] = content["payload"]["sell_currency"]
-    trade['buy_amount'] = content["payload"]["buy_amount"]
-    trade['sell_amount'] = content["payload"]["sell_amount"]
-    trade['platform'] = content["payload"]["platform"]
+    #pass
+    print('Log_message Function')
+    
+    #Create a trading Dictionary
+    trading = {}
+    trading['sender_pk'] = content["payload"]["sender_pk"]
+    trading['receiver_pk'] = content["payload"]["receiver_pk"]
+    trading['buy_currency'] = content["payload"]["buy_currency"]
+    trading['sell_currency'] = content["payload"]["sell_currency"]
+    trading['buy_amount'] = content["payload"]["buy_amount"]
+    trading['sell_amount'] = content["payload"]["sell_amount"]
+    trading['platform'] = content["payload"]["platform"]
 
-    log_obj = Log( message = json.dumps(trade) )
+    log_obj = Log( message = json.dumps(trading) )
     g.session.add(log_obj)
     g.session.commit()
 
@@ -57,8 +58,8 @@ def log_message(content):
 ---------------- Endpoints ----------------
 """
     
-@app.route('/trade', methods=['POST'])
-def trade():
+@app.route('/trading', methods=['POST'])
+def trading():
     if request.method == "POST":
         content = request.get_json(silent=True)
         print( f"content = {json.dumps(content)}" )
@@ -67,7 +68,7 @@ def trade():
         error = False
         for field in fields:
             if not field in content.keys():
-                print( f"{field} not received by Trade" )
+                print( f"{field} not received by Trading" )
                 print( json.dumps(content) )
                 log_message(content)
                 return jsonify( False )
@@ -75,7 +76,7 @@ def trade():
         error = False
         for column in columns:
             if not column in content['payload'].keys():
-                print( f"{column} not received by Trade" )
+                print( f"{column} not received by Trading" )
                 error = True
         if error:
             print( json.dumps(content) )
@@ -101,7 +102,7 @@ def trade():
             buy_amount = content["payload"]["buy_amount"]
             sell_amount = content["payload"]["sell_amount"]
 
-            #Trade Dict
+            #Trading Dict
             msg_dict = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'sell_amount':sell_amount,'buy_amount':buy_amount}
             
             
@@ -139,16 +140,16 @@ def trade():
             sell_amount = content["payload"]["sell_amount"]
 
 
-            #Trade Dict
-            trade = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'buy_amount':buy_amount,'sell_amount':sell_amount }
+            #Trading Dict
+            trading = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'buy_amount':buy_amount,'sell_amount':sell_amount }
             
-            payload = json.dumps(trade)
+            payload = json.dumps(trading)
             
             
             if algosdk.util.verify_bytes(payload.encode('utf-8'),sig,pk):
                 print( "Algo sig verifies!" )
                 # Write to Order table, exclude platform
-                order_obj = Order( sender_pk=trade['sender_pk'],receiver_pk=trade['receiver_pk'], buy_currency=trade['buy_currency'], sell_currency=trade['sell_currency'], buy_amount=trade['buy_amount'], sell_amount=trade['sell_amount'],signature = content["sig"] )
+                order_obj = Order( sender_pk=trading['sender_pk'],receiver_pk=trading['receiver_pk'], buy_currency=trading['buy_currency'], sell_currency=trading['sell_currency'], buy_amount=trading['buy_amount'], sell_amount=trading['sell_amount'],signature = content["sig"] )
                 g.session.add(order_obj)
                 g.session.commit()
                 return jsonify(True)
