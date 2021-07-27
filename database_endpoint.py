@@ -36,9 +36,7 @@ def shutdown_session(response_or_exc):
 def log_message(content):
     # Takes input dictionary d and writes it to the Log table
     #pass
-    print('Log_message Function')
-
-    #Create a trade Dictionary
+    #Create a Dictionary
     trade = {}
     #BUYSELL
     trade["buy_currency"] = content["payload"]["buy_currency"]
