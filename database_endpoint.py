@@ -136,7 +136,6 @@ def trade():
             #ERROR MESSAGE
             else :
                 log_message(content)
-                print("error")
                 return jsonify(False)
         #ETHEREUM
         elif platform == "Ethereum" or platform == "ethereum":
@@ -167,7 +166,6 @@ def trade():
             else :
                 print('Recovered ETH pk::'+eth_account.Account.recover_message(eth_encoded_msg,signature=sig))
                 log_message(content)
-                print("Error")
                 return jsonify(False)
         else:
             print("Error check code")
