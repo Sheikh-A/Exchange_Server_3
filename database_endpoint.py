@@ -37,22 +37,26 @@ def log_message(content):
     # Takes input dictionary d and writes it to the Log table
     #pass
     print('Log_message Function')
-    
+
     #Create a trade Dictionary
     trade = {}
-    trade['sender_pk'] = content["payload"]["sender_pk"]
-    trade['receiver_pk'] = content["payload"]["receiver_pk"]
-    trade['buy_currency'] = content["payload"]["buy_currency"]
-    trade['sell_currency'] = content["payload"]["sell_currency"]
-    trade['buy_amount'] = content["payload"]["buy_amount"]
-    trade['sell_amount'] = content["payload"]["sell_amount"]
-    trade['platform'] = content["payload"]["platform"]
+    #BUYSELL
+    trade["buy_currency"] = content["payload"]["buy_currency"]
+    trade["sell_currency"] = content["payload"]["sell_currency"]
+    #BUYAMT
+    trade["buy_amount"] = content["payload"]["buy_amount"]
+    trade["sell_amount"] = content["payload"]["sell_amount"]
+    #ADDRESS
+    trade["sender_pk"] = content["payload"]["sender_pk"]
+    trade["receiver_pk"] = content["payload"]["receiver_pk"]
+    #PLATFORM
+    trade["platform"] = content["payload"]["platform"]
 
     log_obj = Log( message = json.dumps(trade) )
     g.session.add(log_obj)
     g.session.commit()
 
-    
+
 
 """
 ---------------- Endpoints ----------------
