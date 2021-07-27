@@ -5,6 +5,7 @@ from flask import jsonify
 import json
 import eth_account
 import algosdk
+###LOGGING FUNCTION
 import logging
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import scoped_session
@@ -16,7 +17,6 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 
 app = Flask(__name__)
-
 
 #These decorators allow you to use g.session to access the database inside the request code
 #BEFORE REQUEST
@@ -36,7 +36,6 @@ def shutdown_session(response_or_exc):
 def log_message(content):
     # Takes input dictionary d and writes it to the Log table
     #pass
-    print('Log_message Function')
 
     #Create a trade Dictionary
     trade = {}
