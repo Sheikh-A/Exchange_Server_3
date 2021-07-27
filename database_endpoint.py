@@ -102,7 +102,7 @@ def trade():
             sell_currency = content["payload"]["sell_currency"]
 
 
-            trade = {'platform':platform,'sender_pk': pk,
+            trade_data = {'platform':platform,'sender_pk': pk,
                      'receiver_pk': receiver_pk,
                      'buy_currency':buy_currency,
                      'sell_currency': sell_currency,
@@ -114,7 +114,7 @@ def trade():
             if algosdk.util.verify_bytes(payload.encode('utf-8'),sig,pk):
                 print( "Checked" )
 
-                order_obj = Order( sender_pk=trade['sender_pk'],receiver_pk=trade['receiver_pk'], buy_currency=trade['buy_currency'], sell_currency=trade['sell_currency'], buy_amount=trade['buy_amount'], sell_amount=trade['sell_amount'],signature = content["sig"] )
+                order_obj = Order( sender_pk=trade_data['sender_pk'],receiver_pk=trade_data['receiver_pk'], buy_currency=trade_data['buy_currency'], sell_currency=trade_data['sell_currency'], buy_amount=trade_data['buy_amount'], sell_amount=trade_data['sell_amount'],signature = content["sig"] )
                 #Add order
                 g.session.add(order_obj)
                 #commit order
