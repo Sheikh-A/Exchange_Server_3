@@ -132,9 +132,8 @@ def trade():
             buy_currency = content["payload"]["buy_currency"]
             sell_currency = content["payload"]["sell_currency"]
 
-            msg_dict = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'sell_amount':sell_amount,'buy_amount':buy_amount}
-
-            message = json.dumps(msg_dict)
+            eth_dict = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'sell_amount':sell_amount,'buy_amount':buy_amount}
+            message = json.dumps(eth_dict)
 
             eth_encoded_msg = eth_account.messages.encode_defunct(text=message)
             print('Ethereum public KEY: '+ pk)
