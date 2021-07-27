@@ -89,7 +89,7 @@ def trade():
         platform = content['payload']['platform']
 
         # ALGORAND
-        if platform == "Algorand" or platform == "algorand":
+        if platform == "Algorand":
             sig = content["sig"]
             #Public KEY
             pk = content["payload"]["sender_pk"]
@@ -138,7 +138,7 @@ def trade():
                 log_message(content)
                 return jsonify(False)
         #ETHEREUM
-        elif platform == "Ethereum" or platform == "ethereum":
+        elif platform == "Ethereum":
             sig = content["sig"][2:]
             pk = content["payload"]["sender_pk"]
 
