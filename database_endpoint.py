@@ -87,60 +87,69 @@ def trade():
             log_message(content)
             return jsonify( False )
 
-        platform = content["payload"]["platform"]
+        #YOUR CODE HERE
+        platform = content['payload']['platform']
 
-        # Ethereum
+        # ALGORAND
         if platform == "Algorand":
             sig = content["sig"]
+            #Public KEY
             pk = content["payload"]["sender_pk"]
 
             receiver_pk = content["payload"]["receiver_pk"]
-            buy_currency = content["payload"]["buy_currency"]
-            sell_currency = content["payload"]["sell_currency"]
+
             buy_amount = content["payload"]["buy_amount"]
             sell_amount = content["payload"]["sell_amount"]
 
+            buy_currency = content["payload"]["buy_currency"]
+            sell_currency = content["payload"]["sell_currency"]
 
-            #Trade Dict
+
             trade = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'buy_amount':buy_amount,'sell_amount':sell_amount }
+            #JSON DUMPS
             payload = json.dumps(trade)
 
             if algosdk.util.verify_bytes(payload.encode('utf-8'),sig,pk):
-                print( "Algo sig verifies!" )
-                # Write to Order table, exclude platform
+                print( "Checked" )
+
                 order_obj = Order( sender_pk=trade['sender_pk'],receiver_pk=trade['receiver_pk'], buy_currency=trade['buy_currency'], sell_currency=trade['sell_currency'], buy_amount=trade['buy_amount'], sell_amount=trade['sell_amount'],signature = content["sig"] )
+                #Add order
                 g.session.add(order_obj)
+                #commit order
                 g.session.commit()
                 return jsonify(True)
+            #ERROR MESSAGE
             else :
                 log_message(content)
                 return jsonify(False)
+        #ETHEREUM
         elif platform == "Ethereum":
             sig = content["sig"][2:]
             pk = content["payload"]["sender_pk"]
 
             receiver_pk = content["payload"]["receiver_pk"]
-            buy_currency = content["payload"]["buy_currency"]
-            sell_currency = content["payload"]["sell_currency"]
+
             buy_amount = content["payload"]["buy_amount"]
             sell_amount = content["payload"]["sell_amount"]
 
-            #Trade Dict
+            buy_currency = content["payload"]["buy_currency"]
+            sell_currency = content["payload"]["sell_currency"]
+
             msg_dict = {'platform':platform,'sender_pk': pk, 'receiver_pk': receiver_pk, 'buy_currency':buy_currency,'sell_currency': sell_currency,'sell_amount':sell_amount,'buy_amount':buy_amount}
 
             message = json.dumps(msg_dict)
 
             eth_encoded_msg = eth_account.messages.encode_defunct(text=message)
-            print('ETH original pk is: '+ pk)
+            print('Ethereum public KEY: '+ pk)
 
             if eth_account.Account.recover_message(eth_encoded_msg,signature=sig) == pk:
-                print( "Etherum check!" )
+                print( "Check completed!" )
                 order_obj = Order( sender_pk=pk,receiver_pk=receiver_pk, buy_currency=buy_currency, sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,signature = content["sig"] )
                 g.session.add(order_obj)
                 g.session.commit()
                 return jsonify(True)
             else :
-                print('ETH recovered pk is: '+eth_account.Account.recover_message(eth_encoded_msg,signature=sig))
+                print('Recovered ETH pk::'+eth_account.Account.recover_message(eth_encoded_msg,signature=sig))
                 log_message(content)
                 return jsonify(False)
         else:
@@ -150,17 +159,20 @@ def trade():
 @app.route('/order_book')
 def order_book():
     #Your code here
-    #Note that you can access the database session using g.session
     result = g.session.query(Order).all()
-    json_obj_result = {
+
+    #GET OBJECT RESULT
+
+    json_result = {
     "data": []
     }
 
-    for row in result:
+    for item in result:
         # timestamp_str = str(row.timestamp)
-        json_obj_result['data'].append({'sender_pk': row.sender_pk,'receiver_pk': row.receiver_pk, 'buy_currency': row.buy_currency, 'sell_currency': row.sell_currency, 'buy_amount': row.buy_amount, 'sell_amount': row.sell_amount,'signature': row.signature})
+        json_result['data'].append({'sender_pk': item.sender_pk,'receiver_pk': item.receiver_pk, 'buy_currency': item.buy_currency,
+                    'sell_currency': item.sell_currency, 'buy_amount': item.buy_amount, 'sell_amount': item.sell_amount,'signature': item.signature})
 
-    return jsonify(json_obj_result)
+    return jsonify(json_result)
 
 if __name__ == '__main__':
     app.run(port='5002')
